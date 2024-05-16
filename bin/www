@@ -3,23 +3,48 @@
 /**
  * Module dependencies.
  */
-
+const ssl_key = process.env.SSL_KEY_PATH;
+const ssl_cert = process.env.SSL_CERT_PATH;
 var app = require('../app');
 var debug = require('debug')('blue-green-demo:server');
 var http = require('http');
+const https = require('https');
+const fs = require('fs');
+
+const sslKeyPath = process.env.SSL_KEY_PATH;
+const sslCertPath = process.env.SSL_CERT_PATH;
+const sslCaPath = process.env.SSL_CA_PATH;
+
+console.log("sslKeyPath: ", sslKeyPath);
+const options = {};
+
+if (sslKeyPath && sslCertPath) {
+  options.key = fs.readFileSync(sslKeyPath);
+  options.cert = fs.readFileSync(sslCertPath);
+
+  if (sslCaPath) {
+    options.ca = fs.readFileSync(sslCaPath);
+  }
+}
 
 /**
  * Get port from environment and store in Express.
  */
 
+console.log("PORT: ", process.env.PORT);
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
-/**
- * Create HTTP server.
- */
 
-var server = http.createServer(app);
+var server;
+
+if (options.key && options.cert) {
+  console.log("Launching https server");
+  server = https.createServer(options, app);
+} else {
+  console.log("Launching http server");
+  server = http.createServer(options, app);
+}
 
 /**
  * Listen on provided port, on all network interfaces.
